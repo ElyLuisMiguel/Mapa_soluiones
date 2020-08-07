@@ -776,7 +776,7 @@ $app->get('/api/informacion/proyectos/hidrologicas', function (Request $request,
 
             $sql = "UPDATE acciones_especificas SET valor = ? WHERE acciones_especificas.id_accion_especifica = ?";
             $c = 0;   
-            var_dump($decode);
+            var_dump($decode->actualizacion);
 
         for ($i=0; $i < count($decode) ; $i++) {             
            
