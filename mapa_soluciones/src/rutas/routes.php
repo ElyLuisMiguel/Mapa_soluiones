@@ -772,11 +772,11 @@ $app->get('/api/informacion/proyectos/hidrologicas', function (Request $request,
 
      $app->put('/api/actualizacion/acciones/especificas', function (Request $request, Response $response){
         $body = json_decode($request->getBody());
-        $decode = json_decode($body->body);       
+        $decode = json_decode($body->body)->actualizacion;       
 
             $sql = "UPDATE acciones_especificas SET valor = ? WHERE acciones_especificas.id_accion_especifica = ?";
             $c = 0;   
-            var_dump($decode->actualizacion);
+            
 
         for ($i=0; $i < count($decode) ; $i++) {             
            
@@ -790,7 +790,6 @@ $app->get('/api/informacion/proyectos/hidrologicas', function (Request $request,
                 if ($stmt['rows_affect'] === 1) {
                     $c = $c++;
                 }
-                var_dump($stmt);
 
              
         }
