@@ -770,30 +770,35 @@ $app->get('/api/informacion/proyectos/hidrologicas', function (Request $request,
      });
 
 
-     $app->put('/api/actualizacion/acciones/especificas/{id_accion}/{valor}', function (Request $request, Response $response){
-        $id_accion = $request->getAttribute('id_accion') + 0;
-        $valor = $request->getAttribute('valor') + 0;
+     $app->put('/api/actualizacion/acciones/especificas', function (Request $request, Response $response){
+        $body = json_decode($request->getBody());
+        $decode = json_decode($body->body);       
 
-       $check = array($id_accion, $valor);
+            $sql = "UPDATE acciones_especificas SET valor = ? WHERE acciones_especificas.id_accion_especifica = ?";
+            $c = 0;   
+            var_dump($decode);
 
-        
-        $contador = 0;
-
-        for ($i=0; $i < count($check) ; $i++) { 
-            if (!isset($check[$i])) {
-                    $contador++;
+        for ($i=0; $i < count($decode) ; $i++) {             
+           
+                $db = new DB();
+                $db=$db->connection('mapa_soluciones');                
+                $accion = $decode[$i]->id_accion_especifica+0;
+                $valor = $decode[$i]->valor+0;
+                $stmt = $db->prepare($sql);
+                $stmt->bind_param("ii", $accion , $valor);
+                $stmt->execute(); 
+                if ($stmt['rows_affect'] === 1) {
+                    $c = $c++;
                 }
-            }
-                
-                if ($contador === 0){
-                    $registro = new Registro(0,$id_accion);
-                    return $registro->actualizacion($valor);
-                }else{
-                    return 'Hay variables que no estan definida';
-                }
+                var_dump($stmt);
 
-        
-
+             
+        }
+        if ($c === count($decode)) {
+            return "Se han actualizado las acciones";
+        }else{
+            return "No se lograron actualizar las acciones";
+        }
 
      });
 
