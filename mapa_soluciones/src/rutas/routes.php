@@ -772,7 +772,10 @@ $app->get('/api/informacion/proyectos/hidrologicas', function (Request $request,
      $app->put('/api/actualizacion/acciones/especificas', function (Request $request, Response $response){
         $body = json_decode($request->getBody());
         $decode = json_decode($body->body);       
+        $decodeId = $decode->id_proyecto + 0;
         $decode = $decode->actualizacion;
+
+       
        // $obras = $obras;
 
             $sql = "UPDATE acciones_especificas SET valor = ? WHERE acciones_especificas.id_accion_especifica = ?";
@@ -796,6 +799,27 @@ $app->get('/api/informacion/proyectos/hidrologicas', function (Request $request,
 
              
         }
+
+        $sql = "SELECT `proyectos`.`id_obra`, `proyectos`.`id_sector`, obras.id_obra, obras.coordenadas AS obras, sector.id_sector, sector.coordenadas AS sector  
+        FROM `proyectos` 
+        LEFT JOIN obras ON proyectos.`id_obra` = obras.`id_obra` 
+        LEFT JOIN sector ON proyectos.`id_sector` = sector.`id_sector` 
+        WHERE proyectos.`id_proyecto` = ?";
+
+         $db = new DB();
+         $db=$db->connection('mapa_soluciones');               
+         $stmt = $db->prepare($sql);
+         $stmt->bind_param("i", $decodeId);
+         $stmt->execute(); 
+         $resultado = $stmt->get_result();
+         $resultado = $resultado->fetch_all(MYSQLI_ASSOC); 
+         $obra = json_decode($resultado[0]['obras']);
+         $obra->features[0]->properties->color = "#0";//cambiar colores
+
+         $sector = json_decode($resultado[0]['sector'])[0]->features[0];
+         $sector->properties->color = "4";
+         
+
         if ($c > 0) {
             return "Se han actualizado las acciones";
         }else{
@@ -816,11 +840,13 @@ $app->get('/api/informacion/proyectos/hidrologicas', function (Request $request,
             $acciones_especificas = $body->{'acciones_especificas'};
             
             $obra = $body->{'obra'};
-            $obra =json_decode($obra);
             $obra->features[0]->properties->color = "#008ffb";
             
+            
 
-            $coordenadas_sector = $body->{'coordenadas_sector'};                      
+            $coordenadas_sector = $body->{'coordenadas_sector'};
+        
+            $coordenadas_sector->features[0]->properties->color = "#008ffb";                      
            
             $lapso_estimado_inicio = $body->{'lapso_estimado_inicio'}; 
             $lapso_estimado_culminacion = $body->{'lapso_estimado_culminacion'};

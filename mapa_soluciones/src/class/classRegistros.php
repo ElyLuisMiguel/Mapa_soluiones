@@ -136,9 +136,10 @@
                     $db = new DB();
                     $db=$db->connection('mapa_soluciones');
                     $id =$datos[1]+0;
-                    $stmt = $db->prepare($sql); 
+                    $stmt = $db->prepare($sql);
                     $stmt->bind_param("siss", $datos[0] , $id , $datos[2] , $datos[3]);
-                    $stmt->execute();  
+                    $stmt->execute(); 
+                    
                                   
 
                     if ($stmt) {
@@ -287,7 +288,8 @@
                                                                                     $db = new DB();
                                                                                     $db=$db->connection('mapa_soluciones');
                                                                                     $stmt = $db->prepare($sql); 
-                                                                                    $stmt->bind_param("i", $datos[1]);
+                                                                                    $id = $datos[1]+0;
+                                                                                    $stmt->bind_param("i", $id);
                                                                                     $stmt->execute();
                                                                                     $resultado = $stmt->get_result();
                                                                                     $resultado = $resultado->fetch_all(MYSQLI_ASSOC);         
