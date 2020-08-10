@@ -772,8 +772,8 @@ $app->get('/api/informacion/proyectos/hidrologicas', function (Request $request,
 
      $app->put('/api/actualizacion/acciones/especificas', function (Request $request, Response $response){
         $body = json_decode($request->getBody());
-        $decode = json_decode($body->body)->actualizacion;       
-
+        $decode = json_decode($body->body);       
+        $decode = $decode->actualizacion;
             $sql = "UPDATE acciones_especificas SET valor = ? WHERE acciones_especificas.id_accion_especifica = ?";
             $c = 0;   
             
@@ -785,15 +785,17 @@ $app->get('/api/informacion/proyectos/hidrologicas', function (Request $request,
                 $accion = $decode[$i]->id_accion_especifica+0;
                 $valor = $decode[$i]->valor+0;
                 $stmt = $db->prepare($sql);
-                $stmt->bind_param("ii", $accion , $valor);
+                $stmt->bind_param("ii", $valor, $accion );
                 $stmt->execute(); 
-                if ($stmt['rows_affect'] === 1) {
-                    $c = $c++;
+                
+                if ($stmt->affected_rows === 1) {
+                    $c = $c+1;
                 }
+                
 
              
         }
-        if ($c === count($decode)) {
+        if ($c > 0) {
             return "Se han actualizado las acciones";
         }else{
             return "No se lograron actualizar las acciones";
