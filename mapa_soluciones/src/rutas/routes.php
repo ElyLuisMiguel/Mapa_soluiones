@@ -773,6 +773,8 @@ $app->get('/api/informacion/proyectos/hidrologicas', function (Request $request,
         $body = json_decode($request->getBody());
         $decode = json_decode($body->body);       
         $decode = $decode->actualizacion;
+       // $obras = $obras;
+
             $sql = "UPDATE acciones_especificas SET valor = ? WHERE acciones_especificas.id_accion_especifica = ?";
             $c = 0;   
             
@@ -814,6 +816,9 @@ $app->get('/api/informacion/proyectos/hidrologicas', function (Request $request,
             $acciones_especificas = $body->{'acciones_especificas'};
             
             $obra = $body->{'obra'};
+            $obra =json_decode($obra);
+            $obra->features[0]->properties->color = "#008ffb";
+            
 
             $coordenadas_sector = $body->{'coordenadas_sector'};                      
            
