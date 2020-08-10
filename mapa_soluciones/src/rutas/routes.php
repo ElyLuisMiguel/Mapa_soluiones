@@ -422,6 +422,47 @@ $app->get('/api/informacion/usuario/{ID_Usuario}', function (Request $request, R
      });
 
 
+$app->get('/api/informacion/mapa/impacto', function (Request $request, Response $response) {
+    $id = $request->getAttribute('ID_Usuario');
+
+    $sql = "SELECT `obras`.`coordenadas` AS obras, `sector`.`coordenadas` AS sector
+    FROM `obras`
+        , `sector`
+        GROUP BY obras.coordenadas and sector.coordenadas";
+    
+    
+         
+         try {
+            $db = new DB();
+            $db=$db->connection('mapa_soluciones');
+            $stmt = $db->prepare($sql); 
+            $stmt->execute();
+
+            $stmt = $stmt->get_result();
+            $resultado = $stmt->fetch_all(MYSQLI_ASSOC);
+            
+            $obra = json_decode($resultado[0]["obras"]);
+            $sector = json_decode($resultado[0]["sector"]);
+            $array = [$obra, $sector];
+            
+
+            return $response->withJson($array[0]);
+            
+
+            
+         } 
+        catch (MySQLDuplicateKeyException $e) {
+            $e->getMessage();
+        }
+        catch (MySQLException $e) {
+            $e->getMessage();
+        }
+        catch (Exception $e) {
+            $e->getMessage();
+        }
+     });
+
+
 
 $app->get('/api/informacion/poblacion/beneficiada', function (Request $request, Response $response) { /* grafico arriba derecha, para ostrar la polacion y los litros por segundos del estado global*/
     
