@@ -642,9 +642,8 @@ $app->get('/api/estadistica/tipos/unidades', function (Request $request, Respons
             $resultado = $stmt->fetch_all(MYSQLI_ASSOC);
 
             return $response->withJson($resultado);
-                    
-            
-         } 
+
+        } 
         catch (MySQLDuplicateKeyException $e) {
             $e->getMessage();
         }
@@ -892,6 +891,10 @@ $app->get('/api/informacion/proyectos/hidrologicas', function (Request $request,
         $id_obra = $body->{'id_obra'};
         $id_sector = $body->{'id_sector'};
        $obra = $body->{'obra'};
+       
+
+
+
        $sector = $body->{'sector'};
         
         $id_lapso = $body->{'id_lapso'};        
@@ -928,7 +931,13 @@ $app->get('/api/informacion/proyectos/hidrologicas', function (Request $request,
             $color = "#ea00a2";
         }
 
-
+        
+        $sector =json_decode($sector);
+        $sector->features[0]->properties->color = $color;
+        
+        
+        $obra =json_decode($obra);
+        $obra->features[0]->properties->color = "#feb019";
         
         $poblacion_final = $body->{'poblacion_final'};
         $id_poblacion = $body->{'id_ejecucion_financiera'};
