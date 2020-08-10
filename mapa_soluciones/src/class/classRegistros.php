@@ -9,34 +9,8 @@
                 $this->accion=$accion;
             }
 
-            function actualizacion($valor){
 
-                $sql = "UPDATE acciones_especificas SET valor = ? WHERE acciones_especificas.id_accion_especifica = ?;";
-               
-                try {
-                    $db = new DB();
-                    $db=$db->connection('mapa_soluciones');
-                    $stmt = $db->prepare($sql); 
-                    $stmt->bind_param("ii", $valor , $this->accion);
-                    $stmt->execute();
-
-                    $stmt = $stmt->get_result();
-                    return "Se ha actualizado";
-                 } 
-                catch (MySQLDuplicateKeyException $e) {
-                    $e->getMessage();
-                }
-                catch (MySQLException $e) {
-                    $e->getMessage();
-                }
-                catch (Exception $e) {
-                    $e->getMessage();
-                }
-
-
-            }
-
-            function actualizacionFinal($lapso , $ciclos , $ejecucion_financiera , $poblacion , $lps, $proyectos){
+            function actualizacionFinal($lapso, $ejecucion_financiera , $poblacion , $lps, $proyectos , $situacion_servicio,$coordenadas){
 
                 $sql = "UPDATE lapso SET lapso_culminación_inicio = ?, lapso_culminación_final = ? WHERE lapso.id_lapso = ?";
                
@@ -47,13 +21,6 @@
                     $stmt->bind_param("ssi" , $lapso[2] , $lapso[1] , $lapso[0]);
                     $stmt->execute();
 
-                        if ($stmt) {
-                            $sql = "UPDATE ciclos SET ciclo_final = ? , opcion_ciclo_final = ? WHERE ciclos.id_ciclo = ?;";
-                            $db = new DB();
-                            $db=$db->connection('mapa_soluciones');
-                            $stmt = $db->prepare($sql); 
-                            $stmt->bind_param("isi" , $ciclos[0] , $ciclos[1] , $ciclos[2]);
-                            $stmt->execute();
 
                                 if ($stmt) {
                                     $sql = "UPDATE ejecucion_financiera SET ejecucion_bolivares_final = ?, ejecucion_euros_final = ?, ejecucion_dolares_final = ?, ejecucion_rublos_final = ? WHERE ejecucion_financiera.id_ejecucion_financiera = ?";
@@ -81,24 +48,60 @@
                                                 $stmt->execute();
 
                                                 if ($stmt) {
-                                                    
-                                                    $sql = "UPDATE proyectos SET id_estatus = ?, id_estado_proyecto = ? WHERE proyectos.id_proyecto = ?";
+                                                    $sql = "UPDATE ciclos SET ciclo_final = ? , opcion_ciclo_final = ? WHERE ciclos.id_ciclo = ?";
                                                     $db = new DB();
                                                     $db=$db->connection('mapa_soluciones');
                                                     $stmt = $db->prepare($sql); 
-                                                    $stmt->bind_param("iii" , $proyectos[0] , $proyectos[1], $proyectos[2]);
+                                                    $stmt->bind_param("iii" , $situacion_servicio[0] , $situacion_servicio[1] , $situacion_servicio[3] );
                                                     $stmt->execute();
-                                                    return "Se ha actualizado";
-                                                }
-                                                
+
+                                                    if ($stmt) {
+
+                                                        $sql = "UPDATE obras SET id_estatus = ?, id_estado_proyecto = ? WHERE proyectos.id_proyecto = ?";
+                                                        $db = new DB();
+                                                        $db=$db->connection('mapa_soluciones');
+                                                        $stmt = $db->prepare($sql); 
+                                                        $stmt->bind_param("iii" , $proyectos[0] , $proyectos[1], $proyectos[2]);
+                                                        $stmt->execute();
+                                                        return "Se ha actualizado"; 
+                                                        
+                                                        if ($stmt) {
+                                                            $sql = "UPDATE obras SET coordenadas = ? WHERE obras.id_obras = ?";
+                                                            $db = new DB();
+                                                            $db=$db->connection('mapa_soluciones');
+                                                            $stmt = $db->prepare($sql); 
+                                                            $stmt->bind_param("ii" , $coordenadas[0] , $coordenadas[2]);
+                                                            $stmt->execute();
+                                                            return "Se ha actualizado";  
+
+                                                            if ($stmt) {
+                                                                $sql = "UPDATE sector SET coordenadas = ? WHERE sector.id_sector = ?";
+                                                                $db = new DB();
+                                                                $db=$db->connection('mapa_soluciones');
+                                                                $stmt = $db->prepare($sql); 
+                                                                $stmt->bind_param("ii" , $coordenadas[1] , $coordenadas[3]);
+                                                                $stmt->execute();
+
+                                                                if ($stmt) {
+                                                                    $sql = "UPDATE proyectos SET id_estatus = ?, id_estado_proyecto = ? WHERE proyectos.id_proyecto = ?";
+                                                                    $db = new DB();
+                                                                    $db=$db->connection('mapa_soluciones');
+                                                                    $stmt = $db->prepare($sql); 
+                                                                    $stmt->bind_param("iii" , $proyectos[0] , $proyectos[1], $proyectos[2]);
+                                                                    $stmt->execute();
+                                                                    return "Se ha actualizado";
+
+
+                                                                                }
+                                                          
+                                                                            }
+                                                                    }
+                                                            }
+                                                    }                                                
                                             }
-
-
-                                    }
-
                                 }
                         }
-                 } 
+                } 
                 catch (MySQLDuplicateKeyException $e) {
                     $e->getMessage();
                 }
@@ -108,9 +111,18 @@
                 catch (Exception $e) {
                     $e->getMessage();
                 }
-
-
             }
+
+           // $obras = json_encode($obras);
+           /*
+           $sql = "UPDATE proyectos SET id_estatus = ?, id_estado_proyecto = ? WHERE proyectos.id_proyecto = ?";
+                                                        $db = new DB();
+                                                        $db=$db->connection('mapa_soluciones');
+                                                        $stmt = $db->prepare($sql); 
+                                                        $stmt->bind_param("iii" , $proyectos[0] , $proyectos[1], $proyectos[2]);
+                                                        $stmt->execute();
+                                                        return "Se ha actualizado";*/
+
 
 
             

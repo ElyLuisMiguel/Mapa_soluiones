@@ -855,7 +855,7 @@ $app->get('/api/informacion/proyectos/hidrologicas', function (Request $request,
             $id_estatus = 0;        
             
             $datos = array($nombre_datos , $id_tipo_solucion_datos , $descripcion_datos , $accion_general_datos);
-            $sector = array( $coordenadas_sector , );
+            $sector = array( $coordenadas_sector );
             $lapso = array($lapso_estimado_inicio , $lapso_estimado_culminacion);
             $ciclos = array( $ciclo_inicial , $opcion_ciclo_inicial );
             $ejecucion_financiera = array($ejecucion_bolivares , $ejecucion_euros , $ejecucion_dolares , $ejecucion_rublos);
@@ -885,23 +885,47 @@ $app->get('/api/informacion/proyectos/hidrologicas', function (Request $request,
 
 
      $app->put('/api/actualizacion/final/proyetos', function (Request $request, Response $response){
-        $body = json_decode($request->getBody());
-
-
+       
+       $body = json_decode($request->getBody());
+        $id_obra = $body->{'id_obra'};
+        $id_sector = $body->{'id_sector'};
+       $obra = $body->{'obra'};
+       $sector = $body->{'sector'};
         
         $id_lapso = $body->{'id_lapso'};        
         $lapso_culminacion_final = $body->{'lapso_culminacion_final'};        
         $lapso_culminación_inicio = $body->{'lapso_culminacion_inicio'};
 
-        $ciclo_final = $body->{'ciclo_final'};        
-        $opcion_ciclo_final = $body->{'opcion_ciclo_final'};
-        $id_ciclo = $body->{'id_ciclo'};        
-
+        
         $ejecucion_bolivares_final = $body->{'ejecucion_bolivares_final'};
         $ejecucion_euros_final = $body->{'ejecucion_euros_final'};
         $ejecucion_dolares_final = $body->{'ejecucion_dolares_final'};
         $ejecucion_rublos_final = $body->{'ejecucion_rublos_final'};
         $id_ejecucion_financiera = $body->{'id_ejecucion_financiera'};
+        
+        
+        $id_ciclo = $body->{'id_ciclo'};        
+        $ciclo_inicial = $body->{'ciclo_inicial'};
+        $opcion_ciclo_inicial = $body->{'opcion_ciclo_final'};
+        $id_estado_proyecto = null;
+        $color = null;
+        
+
+
+        if ($ciclo_inicial < 4 && $opcion_ciclo_inicial === "dias") {
+            $id_estado_proyecto = 1;
+            $color = "#9191e3";
+        }else if ($ciclo_inicial > 3 && $opcion_ciclo_inicial === "dias" || $ciclo_inicial < 45 && $opcion_ciclo_inicial === "dias" || $ciclo_inicial > 0 && $opcion_ciclo_inicial === "semanas" || $ciclo_inicial < 7 && $opcion_ciclo_inicial === "semanas" || $ciclo_inicial === 1 && $opcion_ciclo_inicial === "meses") {
+            $id_estado_proyecto = 2;
+            $color = "#ffa219";
+        }else if ($ciclo_inicial > 44 && $opcion_ciclo_inicial === "dias" || $ciclo_inicial > 6 && $opcion_ciclo_inicial === "semanas" || $ciclo_inicial > 1 && $opcion_ciclo_inicial === "meses") {
+           $id_estado_proyecto = 3;
+           $color = "#ea00a2";
+        }else {
+            $id_estado_proyecto = 3;
+            $color = "#ea00a2";
+        }
+
 
         
         $poblacion_final = $body->{'poblacion_final'};
@@ -917,13 +941,14 @@ $app->get('/api/informacion/proyectos/hidrologicas', function (Request $request,
 
 
         $lapso = array($id_lapso , $lapso_culminacion_final , $lapso_culminación_inicio);
-        $ciclos = array($ciclo_final , $opcion_ciclo_final , $id_ciclo);
         $ejecucion_financiera = array($ejecucion_bolivares_final , $ejecucion_euros_final , $ejecucion_dolares_final , $ejecucion_rublos_final , $id_ejecucion_financiera);
         $poblacion = array($poblacion_final , $id_poblacion);
         $lps = array($lps_final , $id_lps);
+        $situacion_servicio = array($ciclo_inicial , $opcion_ciclo_inicial , $color , $id_ciclo);
         $proyectos = array($id_estatus , $id_estado_proyecto, $id_proyecto);
+        $coordenadas = array($obra , $sector , $id_obra , $id_sector);
         
-        $check = array($id_lapso , $lapso_culminacion_final , $lapso_culminación_inicio,$ciclo_final , $opcion_ciclo_final , $id_ciclo,$ejecucion_bolivares_final , $ejecucion_euros_final , $ejecucion_dolares_final , $ejecucion_rublos_final , $id_ejecucion_financiera, $poblacion_final , $id_poblacion,$lps_final , $id_lps, $id_estatus , $id_estado_proyecto, $id_proyecto);
+        $check = array($id_lapso , $lapso_culminacion_final , $lapso_culminación_inicio, $id_ciclo,$ejecucion_bolivares_final , $ejecucion_euros_final , $ejecucion_dolares_final , $ejecucion_rublos_final , $id_ejecucion_financiera, $poblacion_final , $id_poblacion,$lps_final , $id_lps, $id_estatus , $id_estado_proyecto, $id_proyecto);
         $contador = 0;
     
             for ($i=0; $i < count($check) ; $i++) { 
@@ -934,7 +959,7 @@ $app->get('/api/informacion/proyectos/hidrologicas', function (Request $request,
                     
                     if ($contador === 0){
                         $registro = new Registro();
-                        return $registro->actualizacionFinal($lapso , $ciclos , $ejecucion_financiera , $poblacion , $lps, $proyectos);
+                        return $registro->actualizacionFinal($lapso  , $ejecucion_financiera , $poblacion , $lps, $proyectos, $situacion_servicio, $coordenadas);
             
                     }else{
                         return 'Hay variables que no estan definida';
@@ -942,4 +967,3 @@ $app->get('/api/informacion/proyectos/hidrologicas', function (Request $request,
 
 
      });
-//.
