@@ -792,7 +792,7 @@ $app->get('/api/informacion/proyectos/hidrologicas', function (Request $request,
                     $c = $c+1;
                 }
                 
-
+//
              
         }
         if ($c > 0) {
