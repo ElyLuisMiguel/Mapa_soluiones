@@ -443,10 +443,10 @@ $app->get('/api/informacion/mapa/impacto', function (Request $request, Response 
             
             $obra = json_decode($resultado[0]["obras"]);
             $sector = json_decode($resultado[0]["sector"]);
-            $array = [$obra, $sector];
+            $array = [$obra, $sector[0]];
             
 
-            return $response->withJson($array[0]);
+            return $response->withJson($array);
             
 
             
