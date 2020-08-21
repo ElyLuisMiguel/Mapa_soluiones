@@ -66,7 +66,7 @@
                                                         return "Se ha actualizado"; 
                                                         
                                                         if ($stmt) {
-                                                            $coordenadas[0] = json_encode($coordenadas[0]);
+                                                            $coordenadas[1] = json_encode($coordenadas[0]);
                                                             $sql = "UPDATE obras SET coordenadas = ? WHERE obras.id_obras = ?";
                                                             $db = new DB();
                                                             $db=$db->connection('mapa_soluciones');
@@ -76,7 +76,7 @@
                                                             return "Se ha actualizado";  
 
                                                             if ($stmt) {
-                                                                $coordenadas[1] = json_encode($coordenadas[1]);
+                                                                $coordenadas[0] = json_encode($coordenadas[1]);
                                                                 $sql = "UPDATE sector SET coordenadas = ? WHERE sector.id_sector = ?";
                                                                 $db = new DB();
                                                                 $db=$db->connection('mapa_soluciones');
