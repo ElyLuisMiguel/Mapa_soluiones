@@ -816,9 +816,6 @@ $app->get('/api/informacion/proyectos/hidrologicas', function (Request $request,
         $decodeId = $decode->id_proyecto + 0;
         $decode = $decode->actualizacion;
 
-       
-       // $obras = $obras;
-
             $sql = "UPDATE acciones_especificas SET valor = ? WHERE acciones_especificas.id_accion_especifica = ?";
             $c = 0;   
             
@@ -1050,3 +1047,63 @@ $app->get('/api/informacion/proyectos/hidrologicas', function (Request $request,
 
 
      });
+
+
+//Actualizacion de acciones especificas
+
+     /*
+
+    {
+	
+            "id_proyecto": "1",
+
+    "acciones_especificas": [
+        {
+            "valor":"0" ,
+            "id_accion_especifica":"1"           
+        },
+
+        {
+            "valor":"1",
+            "id_accion_especifica":"2" 
+        }
+        
+    ] 
+    }
+    
+    */
+
+
+
+//Actualizacion final
+
+
+/*
+
+
+{
+	
+	"id_lapso":"1",
+	"lapso_culminacion_final":"2020-06-27",
+	"lapso_culminacion_inicio":"2020-06-25",
+	"id_ciclo":"1",
+	"ciclo_inicial":"1",
+	"opcion_ciclo_inicial":"semanas",
+	
+	
+	
+	"ejecucion_bolivares_final":"1",
+	"ejecucion_euros_final":"1",
+	"ejecucion_dolares_final":"1",
+	"ejecucion_rublos_final":"1",
+	"opcion_ciclo_final":"1",
+	
+	"poblacion_final":"1",
+	"id_poblacion":"1",
+	
+	"id_estatus":"1",
+	"id_estado_proyecto":"2",
+	"id_proyecto":"2"
+}
+
+
