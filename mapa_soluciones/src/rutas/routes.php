@@ -14,181 +14,241 @@ use \Firebase\JWT\JWT;
 
 
 
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+//////////////////////////////* Usuario */////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
+
 //creacion de usuario, solo con filtro de email y nick
 $app->post('/api/creacion/usuarios', function (Request $request, Response $response) { 
-   $body = json_decode($request->getBody());
-    $nick = $body->{'nick'};
-    $email = $body->{'email'};
-    $email = filter_var($email, FILTER_SANITIZE_EMAIL);
-    $pass = $body->{'pass'};
-    $rol = $body->{'id_rol'};           
-    $hidrologica = $body->{'id_hidrologica'};           
-    
-    $check = array($nick , $pass ,$email , $rol , $hidrologica );
-    $contador = 0;
-
-    for ($i=0; $i < count($check) ; $i++) { 
-        if (!isset($check[$i])) {
-                $contador++;
-            }
-        }
-           
-            if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
-                return "El email no es valido";
-            }else  if ($contador === 0){
-                $usuarios = new Usuarios($nick , $pass);
-                return $usuarios->creacion($body , $email , $rol , $hidrologica);
-            }else{
-                return 'Hay variables que no estan definida';
-            }
-           
+    $body = json_decode($request->getBody());
+     $nick = $body->{'nick'};
+     $email = $body->{'email'};
+     $email = filter_var($email, FILTER_SANITIZE_EMAIL);
+     $pass = $body->{'pass'};
+     $rol = $body->{'id_rol'};           
+     $hidrologica = $body->{'id_hidrologica'};           
+     
+     $check = array($nick , $pass ,$email , $rol , $hidrologica );
+     $contador = 0;
+ 
+     for ($i=0; $i < count($check) ; $i++) { 
+         if (!isset($check[$i])) {
+                 $contador++;
+             }
+         }
             
-     });
-
-     $app->post('/api/info/user', function (Request $request, Response $response) { 
-        $body = json_decode($request->getBody());
-        $nick = json_decode($body->body);
-       // "Alex";// <---para pruebas rapidas 
-        
+             if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+                 return "El email no es valido";
+             }else  if ($contador === 0){
+                 $usuarios = new Usuarios($nick , $pass);
+                 return $usuarios->creacion($body , $email , $rol , $hidrologica);
+             }else{
+                 return 'Hay variables que no estan definida';
+             }
             
-
-            try {
-                $sql = "SELECT usuarios.id_hidrologica FROM usuarios WHERE usuarios.nick = ?";
-                $db = new DB();
-                $db=$db->connection('usuarios_m_soluciones');
-                $stmt = $db->prepare($sql); 
-                $stmt->bind_param("s", $nick);
-                $stmt->execute();
-                $resultado = $stmt->get_result();
-                $resultado = $resultado->fetch_object();
-                $id_hidrologica = $resultado->id_hidrologica;                              
-                
-                if ($stmt) {
+             
+      });
+ 
+      $app->post('/api/info/user', function (Request $request, Response $response) { 
+         $body = json_decode($request->getBody());
+         $nick = json_decode($body->body);
+        // "Alex";// <---para pruebas rapidas 
+         
+             
+ 
+             try {
+                 $sql = "SELECT usuarios.id_hidrologica FROM usuarios WHERE usuarios.nick = ?";
+                 $db = new DB();
+                 $db=$db->connection('usuarios_m_soluciones');
+                 $stmt = $db->prepare($sql); 
+                 $stmt->bind_param("s", $nick);
+                 $stmt->execute();
+                 $resultado = $stmt->get_result();
+                 $resultado = $resultado->fetch_object();
+                 $id_hidrologica = $resultado->id_hidrologica;                              
+                 
+                 if ($stmt) {
+                     
+                     $sql = "SELECT hidrologicas.* FROM hidrologicas WHERE hidrologicas.id_hidrologica = ?";
+                     $db = new DB();
+                     $db=$db->connection('mapa_soluciones');
+                     $stmt = $db->prepare($sql); 
+                     $stmt->bind_param("i", $id_hidrologica );
+                     $stmt->execute();
+                     $resultado = $stmt->get_result();
+                     $resultado = $resultado->fetch_object();
+                     $estado1 = $resultado->id_estado;  
+                     $estado2 = $resultado->id_estado2;
+                     $estado3 = $resultado->id_estado3;
+                     $hidrologica = $resultado->hidrologica;
+                     $id_hidrologica = $resultado->id_hidrologica;
+                     
+ 
+                     if ($stmt) {
+                         $sql = "SELECT estados.id_estado, estados.estado
+                                 FROM estados
+                                 WHERE estados.id_estado 
+                                 IN (? , ? , ?)";
+                         $db = new DB();
+                         $db=$db->connection('mapa_soluciones');
+                         $stmt = $db->prepare($sql); 
+                         $stmt->bind_param("iii", $estado1 , $estado2 , $estado3 );
+                         $stmt->execute();
+                         $resultado = $stmt->get_result();
+                         $resultado = $resultado->fetch_all(MYSQLI_ASSOC);
+ 
+                         $array = [
+                             "hidrologica" => $hidrologica,
+                             "id_hidrologica" => $id_hidrologica,
+                             "estados" => $resultado
+                         ];
+                         return $response->withJson($array);
+ 
+                     }
+ 
+                 }
                     
-                    $sql = "SELECT hidrologicas.* FROM hidrologicas WHERE hidrologicas.id_hidrologica = ?";
+                 
+                         
+                 
+              } 
+             catch (MySQLDuplicateKeyException $e) {
+                 $e->getMessage();
+             }
+             catch (MySQLException $e) {
+                 $e->getMessage();
+             }
+             catch (Exception $e) {
+                 $e->getMessage();
+             }
+              });
+
+
+
+$app->post('/authenticate', function (Request $request, Response $response) {
+    $body = json_decode($request->getBody());
+
+    $sql = "SELECT `usuarios`.*
+            FROM `usuarios`";
+    $db = new DB();
+    $resultado = $db->consultaSinParametros('usuarios_m_soluciones', $sql);
+    
+    
+    $body=json_decode($body->body);
+    
+    
+    foreach ($resultado[0] as $key => $user) {
+    if ($user['nick'] == $body->user && $user['pass'] == $body->pass) {
+        $current_user = $user;
+    }}
+
+    if (!isset($current_user)) {
+        echo json_encode("No user found");
+    } else{
+
+        $sql = "SELECT * FROM tokens
+             WHERE id_usuario_token  = ?";
+
+        try {
+            $db = new DB();
+            $db = $db->connection('usuarios_m_soluciones');
+            $stmt = $db->prepare($sql);
+            $stmt->bind_param("i", $current_user['id_usuario']);
+            $stmt->execute();
+            $stmt = $stmt->get_result();
+             
+            $token_from_db = $stmt->fetch_object();
+            
+            $db = null;
+            if ($token_from_db) {
+                return $response->withJson([
+                "Token" => $token_from_db->token,
+                "User_render" =>$current_user['id_rol'], 
+               // "Hidrologica" =>$current_user
+                ]);
+            }    
+            }catch (Exception $e) {
+            $e->getMessage();
+            }
+
+        if (count($current_user) != 0 && !$token_from_db) {
+
+
+             $data = [
+                "user_login" => $current_user['nick'],
+                "user_id"    => $current_user['id_usuario'],
+                "user_rol"    => $current_user['id_rol']
+            ];
+
+             try {
+                $token=Auth::SignIn($data);
+             } catch (Exception $e) {
+                 echo json_encode($e);
+             }
+
+              $sql = "INSERT INTO tokens (id_usuario_token, token)
+                  VALUES (?, ?)";
+              try {
+                    $hoy = (date('Y-m-d', time()));
                     $db = new DB();
-                    $db=$db->connection('mapa_soluciones');
-                    $stmt = $db->prepare($sql); 
-                    $stmt->bind_param("i", $id_hidrologica );
+                    $db = $db->connection('usuarios_m_soluciones');
+                    $stmt = $db->prepare($sql);
+                    $stmt->bind_param('is', $current_user['id_usuario'], $token);
                     $stmt->execute();
-                    $resultado = $stmt->get_result();
-                    $resultado = $resultado->fetch_object();
-                    $estado1 = $resultado->id_estado;  
-                    $estado2 = $resultado->id_estado2;
-                    $estado3 = $resultado->id_estado3;
-                    $hidrologica = $resultado->hidrologica;
-                    $id_hidrologica = $resultado->id_hidrologica;
-                    
+                    $db = null;
+                    return $response->withJson([
+                    "Token" => $token,
+                    "User_render" =>$current_user['id_rol']
+                    ]);
+ 
+              } catch (PDOException $e) {
+                  echo '{"error":{"text":' . $e->getMessage() . '}}';
+              }
+         }
+    }
 
-                    if ($stmt) {
-                        $sql = "SELECT estados.id_estado, estados.estado
-                                FROM estados
-                                WHERE estados.id_estado 
-                                IN (? , ? , ?)";
-                        $db = new DB();
-                        $db=$db->connection('mapa_soluciones');
-                        $stmt = $db->prepare($sql); 
-                        $stmt->bind_param("iii", $estado1 , $estado2 , $estado3 );
-                        $stmt->execute();
-                        $resultado = $stmt->get_result();
-                        $resultado = $resultado->fetch_all(MYSQLI_ASSOC);
-
-                        $array = [
-                            "hidrologica" => $hidrologica,
-                            "id_hidrologica" => $id_hidrologica,
-                            "estados" => $resultado
-                        ];
-                        return $response->withJson($array);
-
-                    }
-
-                }
-                   
-                
-                        
-                
-             } 
-            catch (MySQLDuplicateKeyException $e) {
-                $e->getMessage();
-            }
-            catch (MySQLException $e) {
-                $e->getMessage();
-            }
-            catch (Exception $e) {
-                $e->getMessage();
-            }
-             });
-    
-  
-             $app->post('/api/municipios', function (Request $request, Response $response) { 
-                $body = json_decode($request->getBody());
-                 $id_estado = json_decode($body->body);
-                 $id_estado = $id_estado->id_estado + 0;
-
-                 $sql = "SELECT municipios.id_municipio, municipios.municipio, estados.id_estado 
-                         FROM municipios 
-                         LEFT JOIN estados ON municipios.id_estado = estados.id_estado 
-                         WHERE municipios.id_estado = ?";
-
-                 
-            try {
-                $db = new DB();
-                $db=$db->connection('mapa_soluciones');
-                $stmt = $db->prepare($sql); 
-                $stmt->bind_param("i", $id_estado);
-                $stmt->execute();
-                $resultado = $stmt->get_result();
-                $resultado = $resultado->fetch_all(MYSQLI_ASSOC);         
-                
-                return $response->withJson($resultado);                        
-             } 
-            catch (MySQLDuplicateKeyException $e) {
-                $e->getMessage();
-            }
-            catch (MySQLException $e) {
-                $e->getMessage();
-            }
-            catch (Exception $e) {
-                $e->getMessage();
-            }
-            
-            });
+});
 
 
 
-            $app->post('/api/parroquias', function (Request $request, Response $response) { 
-                $body = json_decode($request->getBody());
-                $id_municipio = json_decode($body->body);
-                $id_municipio = $id_municipio->id_municipio +0;
 
-                 $sql = "SELECT parroquias.id_parroquia, parroquias.parroquia, municipios.id_municipio 
-                 FROM parroquias 
-                 LEFT JOIN municipios ON parroquias.id_municipio = municipios.id_municipio 
-                 WHERE municipios.id_municipio = ?";
 
-                 
-            try {
-                $db = new DB();
-                $db=$db->connection('mapa_soluciones');
-                $stmt = $db->prepare($sql); 
-                $stmt->bind_param("i", $id_municipio);
-                $stmt->execute();
-                $resultado = $stmt->get_result();
-                $resultado = $resultado->fetch_all(MYSQLI_ASSOC);
-                
-                return $response->withJson($resultado);                        
-             } 
-            catch (MySQLDuplicateKeyException $e) {
-                $e->getMessage();
-            }
-            catch (MySQLException $e) {
-                $e->getMessage();
-            }
-            catch (Exception $e) {
-                $e->getMessage();
-            }
-            
-            });
+
+
+//////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
+//////////////////////////////* GET *//////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -303,89 +363,6 @@ $app->get('/api/info/completa/proyecto/{id_proyecto}', function (Request $reques
 
 
 
-$app->post('/authenticate', function (Request $request, Response $response) {
-    $body = json_decode($request->getBody());
-
-    $sql = "SELECT `usuarios`.*
-            FROM `usuarios`";
-    $db = new DB();
-    $resultado = $db->consultaSinParametros('usuarios_m_soluciones', $sql);
-    
-    
-    $body=json_decode($body->body);
-    
-    
-    foreach ($resultado[0] as $key => $user) {
-    if ($user['nick'] == $body->user && $user['pass'] == $body->pass) {
-        $current_user = $user;
-    }}
-
-    if (!isset($current_user)) {
-        echo json_encode("No user found");
-    } else{
-
-        $sql = "SELECT * FROM tokens
-             WHERE id_usuario_token  = ?";
-
-        try {
-            $db = new DB();
-            $db = $db->connection('usuarios_m_soluciones');
-            $stmt = $db->prepare($sql);
-            $stmt->bind_param("i", $current_user['id_usuario']);
-            $stmt->execute();
-            $stmt = $stmt->get_result();
-             
-            $token_from_db = $stmt->fetch_object();
-            
-            $db = null;
-            if ($token_from_db) {
-                return $response->withJson([
-                "Token" => $token_from_db->token,
-                "User_render" =>$current_user['id_rol'], 
-               // "Hidrologica" =>$current_user
-                ]);
-            }    
-            }catch (Exception $e) {
-            $e->getMessage();
-            }
-
-        if (count($current_user) != 0 && !$token_from_db) {
-
-
-             $data = [
-                "user_login" => $current_user['nick'],
-                "user_id"    => $current_user['id_usuario'],
-                "user_rol"    => $current_user['id_rol']
-            ];
-
-             try {
-                $token=Auth::SignIn($data);
-             } catch (Exception $e) {
-                 echo json_encode($e);
-             }
-
-              $sql = "INSERT INTO tokens (id_usuario_token, token)
-                  VALUES (?, ?)";
-              try {
-                    $hoy = (date('Y-m-d', time()));
-                    $db = new DB();
-                    $db = $db->connection('usuarios_m_soluciones');
-                    $stmt = $db->prepare($sql);
-                    $stmt->bind_param('is', $current_user['id_usuario'], $token);
-                    $stmt->execute();
-                    $db = null;
-                    return $response->withJson([
-                    "Token" => $token,
-                    "User_render" =>$current_user['id_rol']
-                    ]);
- 
-              } catch (PDOException $e) {
-                  echo '{"error":{"text":' . $e->getMessage() . '}}';
-              }
-         }
-    }
-
-});
 
 $app->get('/api/informacion/usuario/{ID_Usuario}', function (Request $request, Response $response) {
     $id = $request->getAttribute('ID_Usuario');
@@ -810,7 +787,222 @@ $app->get('/api/informacion/proyectos/hidrologicas', function (Request $request,
      });
 
 
-     $app->put('/api/actualizacion/acciones/especificas', function (Request $request, Response $response){
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////* POST *///////////////////////////////////
+////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
+
+
+
+
+$app->post('/api/municipios', function (Request $request, Response $response) { 
+                $body = json_decode($request->getBody());
+                 $id_estado = json_decode($body->body);
+                 $id_estado = $id_estado->id_estado + 0;
+
+                 $sql = "SELECT municipios.id_municipio, municipios.municipio, estados.id_estado 
+                         FROM municipios 
+                         LEFT JOIN estados ON municipios.id_estado = estados.id_estado 
+                         WHERE municipios.id_estado = ?";
+
+                 
+            try {
+                $db = new DB();
+                $db=$db->connection('mapa_soluciones');
+                $stmt = $db->prepare($sql); 
+                $stmt->bind_param("i", $id_estado);
+                $stmt->execute();
+                $resultado = $stmt->get_result();
+                $resultado = $resultado->fetch_all(MYSQLI_ASSOC);         
+                
+                return $response->withJson($resultado);                        
+             } 
+            catch (MySQLDuplicateKeyException $e) {
+                $e->getMessage();
+            }
+            catch (MySQLException $e) {
+                $e->getMessage();
+            }
+            catch (Exception $e) {
+                $e->getMessage();
+            }
+            
+            });
+
+
+
+$app->post('/api/parroquias', function (Request $request, Response $response) { 
+                $body = json_decode($request->getBody());
+                $id_municipio = json_decode($body->body);
+                $id_municipio = $id_municipio->id_municipio +0;
+
+                 $sql = "SELECT parroquias.id_parroquia, parroquias.parroquia, municipios.id_municipio 
+                 FROM parroquias 
+                 LEFT JOIN municipios ON parroquias.id_municipio = municipios.id_municipio 
+                 WHERE municipios.id_municipio = ?";
+
+                 
+            try {
+                $db = new DB();
+                $db=$db->connection('mapa_soluciones');
+                $stmt = $db->prepare($sql); 
+                $stmt->bind_param("i", $id_municipio);
+                $stmt->execute();
+                $resultado = $stmt->get_result();
+                $resultado = $resultado->fetch_all(MYSQLI_ASSOC);
+                
+                return $response->withJson($resultado);                        
+             } 
+            catch (MySQLDuplicateKeyException $e) {
+                $e->getMessage();
+            }
+            catch (MySQLException $e) {
+                $e->getMessage();
+            }
+            catch (Exception $e) {
+                $e->getMessage();
+            }
+            
+            });
+
+
+
+     
+            $app->post('/api/registro/proyetos', function (Request $request, Response $response){
+                $body = json_decode($request->getBody());
+                $body = json_decode($body->body);
+                    $nombre_datos = $body->{'datos'}->{'nombre_datos'};
+                    $id_tipo_solucion_datos =$body->{'datos'}->{'id_tipo_solucion_datos'};           
+                    $descripcion_datos = $body->{'datos'}->{'descripcion_datos'};
+                    $accion_general_datos = $body->{'datos'}->{'accion_general'};
+                    
+                    $acciones_especificas = $body->{'acciones_especificas'};
+                    
+                    $obra = $body->{'obra'};
+                    $obra->features[0]->properties->color = "#008ffb";
+                    
+                    
+        
+                    $coordenadas_sector = $body->{'coordenadas_sector'};
+                
+                    $coordenadas_sector->features[0]->properties->color = "#008ffb";                      
+                   
+                    $lapso_estimado_inicio = $body->{'lapso_estimado_inicio'}; 
+                    $lapso_estimado_culminacion = $body->{'lapso_estimado_culminacion'};
+                    
+                    $ciclo_inicial =$body->{'ciclo_inicial'};
+                    $opcion_ciclo_inicial = $body->{'opcion_ciclo_inicial'};
+        
+                    if ($ciclo_inicial < 4 && $opcion_ciclo_inicial === "dias") {
+                        $id_estado_proyecto = 1;
+                    }else if ($ciclo_inicial > 3 && $opcion_ciclo_inicial === "dias" || $ciclo_inicial < 45 && $opcion_ciclo_inicial === "dias" || $ciclo_inicial > 0 && $opcion_ciclo_inicial === "semanas" || $ciclo_inicial < 7 && $opcion_ciclo_inicial === "semanas" || $ciclo_inicial === 1 && $opcion_ciclo_inicial === "meses") {
+                        $id_estado_proyecto = 2;
+                    }else if ($ciclo_inicial > 44 && $opcion_ciclo_inicial === "dias" || $ciclo_inicial > 6 && $opcion_ciclo_inicial === "semanas" || $ciclo_inicial > 1 && $opcion_ciclo_inicial === "meses") {
+                       $id_estado_proyecto = 3;
+                    }else {
+                        $id_estado_proyecto = 3;
+                    }
+                          
+                    $ejecucion_bolivares =  $body->{'ejecucion_bolivares'};
+                    $ejecucion_euros = $body->{'ejecucion_euros'};
+                    $ejecucion_dolares =$body->{'ejecucion_dolares'};
+                    $ejecucion_rublos = $body->{'ejecucion_rublos'};
+                    
+                    $inversion_bolivares = $body->{'inversion_bolivares'};
+                    $inversion_euros = $body->{'inversion_euros'};
+                    $inversion_dolares = $body->{'inversion_dolares'};
+                    $inversion_rublos = $body->{'inversion_rublos'};            
+                    
+                    $poblacion_inicial = $body->{'poblacion_inicial'};     
+                    
+                    $lps_inicial =$body->{'lps_inicial'};       
+        
+                    
+                   
+                    $id_hidrologica = $body->{'id_hidrologica'};
+                    $id_estado = $body->{'id_estado'};
+                    $id_municipio = $body->{'id_municipio'};
+                    $id_parroquia = $body->{'id_parroquia'};
+                    $id_estatus = 0;        
+                    
+                    $datos = array($nombre_datos , $id_tipo_solucion_datos , $descripcion_datos , $accion_general_datos);
+                    $sector = array( $coordenadas_sector );
+                    $lapso = array($lapso_estimado_inicio , $lapso_estimado_culminacion);
+                    $ciclos = array( $ciclo_inicial , $opcion_ciclo_inicial );
+                    $ejecucion_financiera = array($ejecucion_bolivares , $ejecucion_euros , $ejecucion_dolares , $ejecucion_rublos);
+                    $inversion = array($inversion_bolivares ,  $inversion_euros , $inversion_dolares , $inversion_rublos);
+                    $proyecto = array( $id_hidrologica , $id_estado , $id_municipio , $id_parroquia , $id_estatus , $id_estado_proyecto);
+        
+                    $check = array($nombre_datos , $id_tipo_solucion_datos , $descripcion_datos , $accion_general_datos , $coordenadas_sector , $lapso_estimado_inicio , $lapso_estimado_culminacion, $ciclo_inicial , $opcion_ciclo_inicial, $ejecucion_bolivares , $ejecucion_euros , $ejecucion_dolares , $ejecucion_rublos , $inversion_bolivares ,  $inversion_euros , $inversion_dolares , $inversion_rublos , $id_hidrologica , $id_estado , $id_municipio , $id_parroquia , $id_estatus , $id_estado_proyecto, $acciones_especificas , $obra ,$poblacion_inicial , $lps_inicial);
+                    $contador = 0;
+            
+                    for ($i=0; $i < count($check) ; $i++) { 
+                        if (!isset($check[$i])) {
+                                $contador++;
+                            }
+                        }
+                            
+                            if ($contador === 0){
+                                $registro = new Registro();
+                                return  $response->withJson($registro->crearProyectos($datos , $acciones_especificas , $obra , $sector, $lapso , $ciclos , $ejecucion_financiera , $inversion , $poblacion_inicial , $lps_inicial , $proyecto));
+                        
+                            }else{
+                                return 'Hay variables que no estan definida';
+                            }
+        
+        
+        
+             });
+        
+
+
+
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////* PUT *///////////////////////////////////
+////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+$app->put('/api/actualizacion/acciones/especificas', function (Request $request, Response $response){
         $body = json_decode($request->getBody());
         $decode = json_decode($body->body);       
         $decodeId = $decode->id_proyecto + 0;
@@ -866,92 +1058,6 @@ $app->get('/api/informacion/proyectos/hidrologicas', function (Request $request,
 
      });
 
-     
-     $app->post('/api/registro/proyetos', function (Request $request, Response $response){
-        $body = json_decode($request->getBody());
-        $body = json_decode($body->body);
-            $nombre_datos = $body->{'datos'}->{'nombre_datos'};
-            $id_tipo_solucion_datos =$body->{'datos'}->{'id_tipo_solucion_datos'};           
-            $descripcion_datos = $body->{'datos'}->{'descripcion_datos'};
-            $accion_general_datos = $body->{'datos'}->{'accion_general'};
-            
-            $acciones_especificas = $body->{'acciones_especificas'};
-            
-            $obra = $body->{'obra'};
-            $obra->features[0]->properties->color = "#008ffb";
-            
-            
-
-            $coordenadas_sector = $body->{'coordenadas_sector'};
-        
-            $coordenadas_sector->features[0]->properties->color = "#008ffb";                      
-           
-            $lapso_estimado_inicio = $body->{'lapso_estimado_inicio'}; 
-            $lapso_estimado_culminacion = $body->{'lapso_estimado_culminacion'};
-            
-            $ciclo_inicial =$body->{'ciclo_inicial'};
-            $opcion_ciclo_inicial = $body->{'opcion_ciclo_inicial'};
-
-            if ($ciclo_inicial < 4 && $opcion_ciclo_inicial === "dias") {
-                $id_estado_proyecto = 1;
-            }else if ($ciclo_inicial > 3 && $opcion_ciclo_inicial === "dias" || $ciclo_inicial < 45 && $opcion_ciclo_inicial === "dias" || $ciclo_inicial > 0 && $opcion_ciclo_inicial === "semanas" || $ciclo_inicial < 7 && $opcion_ciclo_inicial === "semanas" || $ciclo_inicial === 1 && $opcion_ciclo_inicial === "meses") {
-                $id_estado_proyecto = 2;
-            }else if ($ciclo_inicial > 44 && $opcion_ciclo_inicial === "dias" || $ciclo_inicial > 6 && $opcion_ciclo_inicial === "semanas" || $ciclo_inicial > 1 && $opcion_ciclo_inicial === "meses") {
-               $id_estado_proyecto = 3;
-            }else {
-                $id_estado_proyecto = 3;
-            }
-                  
-            $ejecucion_bolivares =  $body->{'ejecucion_bolivares'};
-            $ejecucion_euros = $body->{'ejecucion_euros'};
-            $ejecucion_dolares =$body->{'ejecucion_dolares'};
-            $ejecucion_rublos = $body->{'ejecucion_rublos'};
-            
-            $inversion_bolivares = $body->{'inversion_bolivares'};
-            $inversion_euros = $body->{'inversion_euros'};
-            $inversion_dolares = $body->{'inversion_dolares'};
-            $inversion_rublos = $body->{'inversion_rublos'};            
-            
-            $poblacion_inicial = $body->{'poblacion_inicial'};     
-            
-            $lps_inicial =$body->{'lps_inicial'};       
-
-            
-           
-            $id_hidrologica = $body->{'id_hidrologica'};
-            $id_estado = $body->{'id_estado'};
-            $id_municipio = $body->{'id_municipio'};
-            $id_parroquia = $body->{'id_parroquia'};
-            $id_estatus = 0;        
-            
-            $datos = array($nombre_datos , $id_tipo_solucion_datos , $descripcion_datos , $accion_general_datos);
-            $sector = array( $coordenadas_sector );
-            $lapso = array($lapso_estimado_inicio , $lapso_estimado_culminacion);
-            $ciclos = array( $ciclo_inicial , $opcion_ciclo_inicial );
-            $ejecucion_financiera = array($ejecucion_bolivares , $ejecucion_euros , $ejecucion_dolares , $ejecucion_rublos);
-            $inversion = array($inversion_bolivares ,  $inversion_euros , $inversion_dolares , $inversion_rublos);
-            $proyecto = array( $id_hidrologica , $id_estado , $id_municipio , $id_parroquia , $id_estatus , $id_estado_proyecto);
-
-            $check = array($nombre_datos , $id_tipo_solucion_datos , $descripcion_datos , $accion_general_datos , $coordenadas_sector , $lapso_estimado_inicio , $lapso_estimado_culminacion, $ciclo_inicial , $opcion_ciclo_inicial, $ejecucion_bolivares , $ejecucion_euros , $ejecucion_dolares , $ejecucion_rublos , $inversion_bolivares ,  $inversion_euros , $inversion_dolares , $inversion_rublos , $id_hidrologica , $id_estado , $id_municipio , $id_parroquia , $id_estatus , $id_estado_proyecto, $acciones_especificas , $obra ,$poblacion_inicial , $lps_inicial);
-            $contador = 0;
-    
-            for ($i=0; $i < count($check) ; $i++) { 
-                if (!isset($check[$i])) {
-                        $contador++;
-                    }
-                }
-                    
-                    if ($contador === 0){
-                        $registro = new Registro();
-                        return  $response->withJson($registro->crearProyectos($datos , $acciones_especificas , $obra , $sector, $lapso , $ciclos , $ejecucion_financiera , $inversion , $poblacion_inicial , $lps_inicial , $proyecto));
-                
-                    }else{
-                        return 'Hay variables que no estan definida';
-                    }
-
-
-
-     });
 
 
      $app->put('/api/actualizacion/final/proyetos', function (Request $request, Response $response){
