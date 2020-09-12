@@ -6,9 +6,11 @@ $app = new \Slim\App;
 
 require __DIR__ . '/../class/auth.php';
 require __DIR__ . '/../class/estadisticas.php';
+require __DIR__ . '/../class/classvalidate.php';
 require __DIR__ . '/../class/classRegistros.php';
 require __DIR__ . '/../class/crearUsuario.php';
 require __DIR__ . '/../config/db.php';
+require __DIR__ . '/../class/val.php';
 
 use \Firebase\JWT\JWT;
 
@@ -70,7 +72,7 @@ $app->post('/api/creacion/usuarios', function (Request $request, Response $respo
          $nick = json_decode($body->body);
         // "Alex";// <---para pruebas rapidas 
          
-             
+            
  
              try {
                  $sql = "SELECT usuarios.id_hidrologica FROM usuarios WHERE usuarios.nick = ?";
@@ -949,7 +951,14 @@ $app->post('/api/parroquias', function (Request $request, Response $response) {
                     $ejecucion_financiera = array($ejecucion_bolivares , $ejecucion_euros , $ejecucion_dolares , $ejecucion_rublos);
                     $inversion = array($inversion_bolivares ,  $inversion_euros , $inversion_dolares , $inversion_rublos);
                     $proyecto = array( $id_hidrologica , $id_estado , $id_municipio , $id_parroquia , $id_estatus , $id_estado_proyecto);
-        
+                    
+                    
+                    
+                    $ejecucion =  array($ejecucion_bolivares , $ejecucion_euros , $ejecucion_dolares , $ejecucion_rublos , $inversion_bolivares ,  $inversion_euros , $inversion_dolares , $inversion_rublos);
+                   
+
+
+
                     $check = array($nombre_datos , $id_tipo_solucion_datos , $descripcion_datos , $accion_general_datos , $coordenadas_sector , $lapso_estimado_inicio , $lapso_estimado_culminacion, $ciclo_inicial , $opcion_ciclo_inicial, $ejecucion_bolivares , $ejecucion_euros , $ejecucion_dolares , $ejecucion_rublos , $inversion_bolivares ,  $inversion_euros , $inversion_dolares , $inversion_rublos , $id_hidrologica , $id_estado , $id_municipio , $id_parroquia , $id_estatus , $id_estado_proyecto, $acciones_especificas , $obra ,$poblacion_inicial , $lps_inicial);
                     $contador = 0;
             
@@ -958,8 +967,12 @@ $app->post('/api/parroquias', function (Request $request, Response $response) {
                                 $contador++;
                             }
                         }
+
+
+                        $validate = new Validacion();
+                        
                             
-                            if ($contador === 0){
+                            if (($contador === 0) AND ($validate->validacion_multiple($ciclo_inicial , $opcion_ciclo_inicial , $ejecucion , $poblacion_inicial , $lps_inicial) === true)){
                                 $registro = new Registro();
                                 return  $response->withJson($registro->crearProyectos($datos , $acciones_especificas , $obra , $sector, $lapso , $ciclos , $ejecucion_financiera , $inversion , $poblacion_inicial , $lps_inicial , $proyecto));
                         
@@ -1128,6 +1141,11 @@ $app->put('/api/actualizacion/acciones/especificas', function (Request $request,
 
         $lapso = array($id_lapso , $lapso_culminacion_final , $lapso_culminación_inicio);
         $ejecucion_financiera = array($ejecucion_bolivares_final , $ejecucion_euros_final , $ejecucion_dolares_final , $ejecucion_rublos_final , $id_ejecucion_financiera);
+        
+        $ejecucion = array($ejecucion_bolivares_final , $ejecucion_euros_final , $ejecucion_dolares_final , $ejecucion_rublos_final , $id_ejecucion_financiera);
+       
+
+
         $poblacion = array($poblacion_final , $id_poblacion);
         $lps = array($lps_final , $id_lps);
         $situacion_servicio = array($ciclo_inicial , $opcion_ciclo_inicial , $color , $id_ciclo);
@@ -1143,7 +1161,14 @@ $app->put('/api/actualizacion/acciones/especificas', function (Request $request,
                     }
                 }
                     
-                    if ($contador === 0){
+
+
+                    $validate = new Validacion();
+
+
+
+
+                    if (($contador === 0) AND ($validate->validacion_multiple($ciclo_inicial , $opcion_ciclo_inicial , $ejecucion , $poblacion_final , $lps_final) === true)){
                         $registro = new Registro();
                         return $registro->actualizacionFinal($lapso  , $ejecucion_financiera , $poblacion , $lps, $proyectos, $situacion_servicio, $coordenadas);
             
